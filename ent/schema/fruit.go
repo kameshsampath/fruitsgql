@@ -1,13 +1,23 @@
 package schema
 
 import (
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 )
 
 // Fruit holds the schema definition for the Fruit entity.
 type Fruit struct {
 	ent.Schema
+}
+
+// Annotations for Fruit
+func (Fruit) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.QueryField(),
+		entgql.Mutations(entgql.MutationCreate()),
+	}
 }
 
 // Fields of the Fruit.

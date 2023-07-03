@@ -1,0 +1,19 @@
+schema:
+ - schemas/*.graphql
+
+resolver:
+  layout: follow-schema
+  dir: resolvers
+  package: resolvers
+  
+autobind:
+  - github.com/kameshsampath/fruitsgql/ent
+  - github.com/kameshsampath/fruitsgql/ent/fruit
+
+models:
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int
+  Node:
+    model:
+      - github.com/kameshsampath/fruitsgql/ent.Noder

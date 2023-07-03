@@ -23,6 +23,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Fruit is the client for interacting with the Fruit builders.
 	Fruit *FruitClient
+	// additional fields for node api
+	tables tables
 }
 
 // NewClient creates a new client configured with the given options.

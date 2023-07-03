@@ -21,6 +21,8 @@ type FruitQuery struct {
 	order      []fruit.OrderOption
 	inters     []Interceptor
 	predicates []predicate.Fruit
+	modifiers  []func(*sql.Selector)
+	loadTotal  []func(context.Context, []*Fruit) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -342,6 +344,9 @@ func (fq *FruitQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Fruit,
 		nodes = append(nodes, node)
 		return node.assignValues(columns, values)
 	}
+	if len(fq.modifiers) > 0 {
+		_spec.Modifiers = fq.modifiers
+	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -351,11 +356,19 @@ func (fq *FruitQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Fruit,
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	for i := range fq.loadTotal {
+		if err := fq.loadTotal[i](ctx, nodes); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
 func (fq *FruitQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := fq.querySpec()
+	if len(fq.modifiers) > 0 {
+		_spec.Modifiers = fq.modifiers
+	}
 	_spec.Node.Columns = fq.ctx.Fields
 	if len(fq.ctx.Fields) > 0 {
 		_spec.Unique = fq.ctx.Unique != nil && *fq.ctx.Unique
