@@ -1,9 +1,18 @@
 
 # Overview
 
+In this part of **Getting Started with Ent and GraphQL** series, we will get ourselves introduced to basics of [GraphQL](https://graphql.org/) and [Ent](https://entgo.io/).
+
+At the end of this Do It Yourself(DIY) tutorial blog, you will
+
+- [x] Understand how to generate entities using `ent`
+- [x] Add support for GraphQL via ent extensions `entgql`
+- [x] Implement query and mutation(create) resolvers for Fruits API
+- [x] Expose the API using GraphQL server
+
 ## What is GraphQL ?
 
-[GraphQL](https://graphql.org/) is a query language for your API, and a server-side runtime for executing queries using a type system you define for your data.
+GraphQL is a query language for your API, and a server-side runtime for executing queries using a type system you define for your data.
 
 GraphQL solves a lot of problems that are faced by API developers,
 
@@ -11,35 +20,28 @@ GraphQL solves a lot of problems that are faced by API developers,
 - No more underfetching and n + 1 problem
 - Rapid iterations during API development
 - Data level performance monitoring
-  
+
 One of the common issues a developer might have during GraphQL API development is how to configure or integrate a backend. Database(DB) is a very common backend that is used by application developers to store the data. Adding DB specific code to your GraphQL API code will result in tight coupling of API with specific database.
 
-Through use of [Object Relational Mapping(ORM)](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping) frameworks can help building database agnostic API, not many ORM frameworks provide integrations via extensions,plugins for GraphQL.
+Through use of [Object Relational Mapping(ORM)](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping) frameworks can help building database agnostic API, not many ORM frameworks provide integrations for GraphQL.
 
 ## ORM in Functional World
 
 ORMs have been quite popular in the Object Oriented Programming(OOP) world e.g. in Java, [Hibernate](https://hibernate.org/) is very popular. With the popularity of ORMs, developers are starting to use more functional programming languages over Object Oriented languages e.g. Java, are in need of ORM frameworks for these languages.
 
-[Ent](https://entgo.io/) is a simple, yet powerful entity framework for Go, that makes it easy to build and maintain applications with large data-models and sticks with the following principles:
+Ent is a simple, yet powerful entity framework for Go, that makes it easy to build and maintain applications with large data-models and sticks with the following principles:
 
 - Easily model database schema as a graph structure.
 - Define schema as a programmatic Go code.
 - Static typing based on code generation.  
 - Database queries and graph traversals are easy to write.
 - Simple to extend and customize using Go templates.
-   
+  
 ### ORM and GraphQL
 
-Ent provides an extension [entgql](https://pkg.go.dev/entgo.io/contrib/entgql) that allows developers to integrate GraphQL with DB using ORM. As ent is already capable of generating DB specific code, using entgql we can generate GraphQL code for the entity models using [99designs/gqlgen](https://github.com/99designs/gqlgen) framework.
+Ent provides an extension [entgql](https://pkg.go.dev/entgo.io/contrib/entgql) that allows developers to integrate GraphQL with DB using an ORM. As ent is already capable of generating DB specific code, with `entgql` we can generate GraphQL code for the entity models using [99designs/gqlgen](https://github.com/99designs/gqlgen) framework.
 
-With enough theory around GraphQL and Ent, let us build a very simple GraphQL API **Fruits**.
-
-At the end of this blog you would
-
-- [x]  Understood how to generate entities using `ent`
-- [x] Adding support for GraphQL via ent extensions `entgql`
-- [x] Implement query and mutation(create) resolvers for Fruits API
-- [x] Finally expose the API using GraphQL server
+With enough theory around GraphQL and Ent, let us build a very simple GraphQL API **Fruits** with database backend support via ent.
 
 ## Demo Sources
 
@@ -55,18 +57,23 @@ Before we jump into the tutorial exercises let us setup the local environment wi
   
 ```shell
 mkdir -p fruitsgql && cd "$_"
-export TUTORIAL_HOME=”$PWD”
+export TUTORIAL_HOME="$PWD"
 ```
 
-### Build Fruits Entity
+> **IMPORTANT**:
+> Please update the references to `[username]` in the demo code with that of the your GitHub username
 
- The fruits entity is a very simple table as described below
+### Fruits Entity
+
+ The `fruits` entity is a very simple table as described below
 
 | Cloumn  | Type| Constraints | Remarks
 | --------- | ----- | -------------  | ------
 | id | serial | primary key | Auto generated
 | name | varchar(50) | not null
 | season | varchar(20) | not null
+
+### Setup Project
 
 Create a go module under the `$TUTORIAL_HOME`,
 
@@ -75,7 +82,9 @@ Create a go module under the `$TUTORIAL_HOME`,
 go mod init github.com/[username]/fruitsgql
 ```
 
-Generate the `Fruit` schema using ent,
+## Generate `ent` ORM Code
+
+Define `Fruit` schema using ent,
 
 ```shell
 go get entgo.io/ent/cmd/ent
@@ -105,7 +114,7 @@ func (Fruit) Fields() []ent.Field {
 }
 ```
 
-Let us generate the ORM code for our table `Fruits`,
+Let us generate the ORM code for our table `fruits`,
 
 ```shell
 go generate ./ent
@@ -144,16 +153,18 @@ ent
 └── tx.go
 ```
 
-Let us verify the code generating by writing simple example([test by example](https://go.dev/blog/examples)).
+Let us verify the code generating by writing simple example([test by example](https://go.dev/blog/examples)). Create a file named `$TUTORIAL_HOME/examples/example_test.go` with the following content,
+
+{%embed https://gist.github.com/kameshsampath/3e69b6c8356d83882938cf46228b7686 %}
 
 ```shell
 mkdir -p examples
 curl -sSL https://gist.githubusercontent.com/kameshsampath/3e69b6c8356d83882938cf46228b7686/raw/66ec6e3c8b9d765b0cbd0dc5da2b29424cb7885a/example_test -o examples/example_test.go
 ```
 
-Edit the `$TUTORIAL_HOME/examples/example_test.go` and update the `github.com/[username]/fruitsgql/ent` with your module path.
+Edit the `$TUTORIAL_HOME/examples/example_test.go` and update the `github.com/[username]/fruitsgql/ent` with your go module path.
 
-For this entire tutorial we will be using SQLite as our target database, run the following command to download the go SQLite driver,
+For this entire tutorial we will be using `SQLite` as our target database. Run the following command to download the go SQLite driver,
 
 ```shell
 go get github.com/mattn/go-sqlite3 
@@ -166,14 +177,12 @@ go mod tidy
 go test -timeout 30s -run ^Example_AddFruit$ ./examples
 ```
 
-The test should successful.
-
 ## GraphQL Integration
 
-The GraphQL integration with ent has the following parts,
+The `GraphQL` integration with `ent` has the following parts,
 
-- Configure a new ent code generator named `entc.go` to use `entgql` extensions
-- Add annotations to `Fruits` entity with GraphQL types `query` and `mutations(create)`
+- Configure a new `ent` code generator named `entc.go` to use `entgql` extensions
+- Add annotations to `Fruits` entity with `GraphQL` types `query`
 - Update the default ent `generate.go` with `entc.go`
 - Run generation generate code that add support for GraphQL with ent
 - Add the `gqlgen.yml` to enable GraphQL code generation using `gqlgen`
@@ -196,6 +205,8 @@ go get entgo.io/contrib/entgql@master
 
 Create a new file `$TUTORIAL_HOME/ent/entc.go` with the following content,
 
+{%embed https://gist.github.com/kameshsampath/5cde84cd9ba0b79f20295febce54b1fc %}
+
 ```shell
 curl -sSL https://gist.githubusercontent.com/kameshsampath/3e69b6c8356d83882938cf46228b7686/raw/6168fc91644e0a3679a02a91f7b49d2ca19ccaf7/entc.go -o $TUTORIAL_HOME/ent/entc.go
 ```
@@ -209,7 +220,6 @@ Edit the `Fruit` entity `$TUTORIAL_HOME/ent/schema/fruit.go` and add the followi
 func (Fruit) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.QueryField(),
-		entgql.Mutations(entgql.MutationCreate()),
 	}
 }
 ```
@@ -235,7 +245,7 @@ Run the generator to generate the GraphQL code,
 go generate .
 ```
 
-### Add gqlgen.yml
+### Add `gqlgen` Configuration
 
 Create a new file `$TUTORIAL_HOME/gqlgen.yml` with the following contents,
 
@@ -327,66 +337,21 @@ go get github.com/labstack/echo/v4
 
 Create a new file `$TUTORIAL_HOME/cmd/server.go` with the following content,
 
-```go
-package main
+{%embed https://gist.github.com/kameshsampath/6eb2a2da511f1d15b47737c35fb1498c %}
 
-import (
-	"context"
-	"log"
-	"time"
-
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql/schema"
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/[username]/fruitsgql/ent"
-	"github.com/[username]/fruitsgql/resolvers"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	_ "github.com/mattn/go-sqlite3"
-)
-
-func main() {
-	// Open a Connection with SQLite
-	client, err := ent.Open(dialect.SQLite, "file:ent?mode=memory&cache=shared&_fk=1")
-	defer client.Close()
-	if err != nil {
-		log.Fatalf("error opening DB connection,%v", err)
-	}
-	// Create/Migrate Schema
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := client.Schema.Create(ctx, schema.WithGlobalUniqueID(true)); err != nil {
-		log.Fatalf("error creating/migrating schema,%v", err)
-	}
-
-    // Create new HTTP Server
-	e := echo.New()
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-
-	e.GET("/", playgroundHandler())
-	e.POST("/query", graphqlHandler(client))
-
-	if err := e.Start(":8081"); err != nil {
-		log.Fatalf("error starting GraphQL server,%v", err)
-	}
-}
-
-func playgroundHandler() echo.HandlerFunc {
-	h := playground.Handler("Fruits", "/query")
-	return echo.WrapHandler(h)
-}
-
-func graphqlHandler(client *ent.Client) echo.HandlerFunc {
-	server := handler.NewDefaultServer(resolvers.NewSchema(client))
-	return echo.WrapHandler(server)
-}
+```shell
+curl -sSL https://gist.github.com/kameshsampath/6eb2a2da511f1d15b47737c35fb1498c -o $TUTORIAL_HOME/cmd/server.go
 ```
 
-Start the server using the url <http://localhost:8081>.
+Start the server,
 
-### Querying Fruits
+```shell
+go run cmd/server.go
+```
+
+You an now access GraphQL API via the url <http://localhost:8081>.
+
+### Query Fruits
 
 Let us query the API
 
@@ -405,7 +370,50 @@ The query should return an empty response,
 ```json
 {
   "data": {
-    "fruits": []
+    "fruits": [
+      {
+        "id": 1,
+        "name": "Mango"
+      },
+      {
+        "id": 2,
+        "name": "Strawberry"
+      },
+      {
+        "id": 3,
+        "name": "Orange"
+      },
+      {
+        "id": 4,
+        "name": "Lemon"
+      },
+      {
+        "id": 5,
+        "name": "Blueberry"
+      },
+      {
+        "id": 6,
+        "name": "Banana"
+      },
+      {
+        "id": 7,
+        "name": "Watermelon"
+      },
+      {
+        "id": 8,
+        "name": "Apple"
+      },
+      {
+        "id": 9,
+        "name": "Pear"
+      }
+    ]
   }
 }
 ```
+
+## Summary
+
+We have now successfully integrated `ent` with `GraphQL`. The **ent-GraphQL** integration supports a lot of other features. In the next part of this series we shall explore how to add mutation methods our Fruits API.
+
+Please be sure to check the other available [tutorials](https://entgo.io/docs/tutorial-setup) to learn more about `ent`.

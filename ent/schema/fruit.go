@@ -16,7 +16,6 @@ type Fruit struct {
 func (Fruit) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.QueryField(),
-		entgql.Mutations(entgql.MutationCreate()),
 	}
 }
 
